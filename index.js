@@ -35,7 +35,7 @@ function animate(){
         bird.wander();
         bird.align();
         bird.cohere();
-        bird.separate();
+        // bird.separate();
         bird.update();
     })
 }

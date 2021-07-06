@@ -11,7 +11,7 @@ class Bird{
         this.accel = new Vector(0, 0);
         this.radius = 4;
         this.color = "brown";
-        this.neighborhood = 50;
+        this.neighborhood = 35;
         // Variável que delimita a distância da borda a partir da qual os organismos começarão a fazer a curva para não bater nas bordas 
         this.d = 35;
         // variáveis usadas para o método wander()
@@ -133,7 +133,7 @@ class Bird{
             var wander_force = new Vector(0, 0);
             wander_force = circle_center.add(displacement);
             // wander_force.limit(this.max_force);
-            this.applyForce(wander_force.mul(0.1));
+            this.applyForce(wander_force.mul(0.3));
     }
 
     distanceTo(bird){
@@ -166,7 +166,7 @@ class Bird{
         // return v;
 
         // v.limit(this.max_force);
-        this.applyForce(v.mul(1));
+        this.applyForce(v);
     }
 
     // Method to make birds steer towards the center of mass
@@ -194,7 +194,7 @@ class Bird{
         // v.normalize();
         // return v;
         v.limit(this.max_force);
-        this.applyForce(v.mul(1));
+        this.applyForce(v);
     }
 
     // Method to make it keep a certain distance from the neighbors
@@ -224,7 +224,7 @@ class Bird{
         // v.normalize();
         // return v;
         v.limit(this.max_force);
-        this.applyForce(v.mul(1));
+        this.applyForce(v);
     }
 
     display(){
