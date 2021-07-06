@@ -3,13 +3,15 @@ class Bird{
     static id = 0;
 
     constructor(x, y){
+        this.id = Bird.id++;
         this.pos = new Vector(x, y);
         this.vel = new Vector(1, 1);
-        this.vel_max = 2;
+        this.max_vel = 2;
         this.max_force = 0.03;
         this.accel = new Vector(0, 0);
         this.radius = 4;
         this.color = "brown";
+        this.neighborhood = 50;
         // Variável que delimita a distância da borda a partir da qual os organismos começarão a fazer a curva para não bater nas bordas 
         this.d = 35;
         // variáveis usadas para o método wander()
@@ -60,35 +62,34 @@ class Bird{
             this.vel.y = this.vel.y * -1;
     }
 
-
     // Método para aplicar força ao organismo que o impeça de continuar a seguir por uma trajetória para fora da tela
     avoidBorders(){
         var desired_vel = null; // Esta velocidade será o Vector que dirá para onde o organismo deve ir para não sair da borda
         this.near_border = false;
             // Borda esquerda
             if(this.pos.x - this.radius < this.d){ 
-            desired_vel = new Vector(this.vel_max, this.vel.y); // Faz sua velocidade ser máxima na direção x (para a direita)
+            desired_vel = new Vector(this.max_vel, this.vel.y); // Faz sua velocidade ser máxima na direção x (para a direita)
             this.near_border = true;
         } 
         // Borda direita
         else if(this.pos.x + this.radius > canvas.width - this.d){
-            desired_vel = new Vector(-this.vel_max, this.vel.y); // Faz sua velocidade ser máxima na direção -x (para a esquerda)
+            desired_vel = new Vector(-this.max_vel, this.vel.y); // Faz sua velocidade ser máxima na direção -x (para a esquerda)
             this.near_border = true;
         }
         // Borda de cima
         if(this.pos.y - this.radius < this.d){
-            desired_vel = new Vector(this.vel.x, this.vel_max); // Faz sua velocidade ser máxima na direção y (para a baixo)
+            desired_vel = new Vector(this.vel.x, this.max_vel); // Faz sua velocidade ser máxima na direção y (para a baixo)
             this.near_border = true;
         }
         // Borda de baixo
         else if(this.pos.y + this.radius> canvas.height - this.d){
-            desired_vel = new Vector(this.vel.x, -this.vel_max); // Faz sua velocidade ser máxima na direção -y (para a cima)
+            desired_vel = new Vector(this.vel.x, -this.max_vel); // Faz sua velocidade ser máxima na direção -y (para a cima)
             this.near_border = true;
         }
         
         if(desired_vel != null){ // Caso qualquer uma das condições anteriores tenha sido satisfeita
             desired_vel.normalize(); // Normaliza (transforma para ter tamanho 1) o Vector desired_vel
-            desired_vel.mul(this.vel_max); // Multiplica o Vector (que agora tem tamanho 1) pela velocidade máxima
+            desired_vel.mul(this.max_vel); // Multiplica o Vector (que agora tem tamanho 1) pela velocidade máxima
             var redirection = desired_vel.sub(this.vel); // Cria um Vector de força que redirecionará o organismo
             redirection.limit(this.max_force * 10); // Limita essa força com uma folga maior ("* 1.5") para dar chances dela ser maior que as outras forças atuantes nele
             this.applyForce(redirection); // Aplica esta força no organismo e a deixa levemente mais forte para ganhar prioridade em relação a outras forças
@@ -131,22 +132,108 @@ class Bird{
             // para criar a força de vagueio
             var wander_force = new Vector(0, 0);
             wander_force = circle_center.add(displacement);
+            // wander_force.limit(this.max_force);
             this.applyForce(wander_force.mul(0.1));
     }
 
-    display(){
-        // c.beginPath();
-        // c.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);        
-        // c.fillStyle = "blue";
-        // c.fill();
+    distanceTo(bird){
+        return Math.sqrt(Math.pow(this.pos.x - bird.pos.x, 2) + Math.pow(this.pos.y - bird.pos.y, 2));
+    }
 
+    // Method to make it align with the neighbors 
+    align(){
+        var v = new Vector(0, 0);
+        var neighbCount = 0;
+
+        Bird.birds.forEach(bird => {
+            if(bird.id != this.id){
+                if(this.distanceTo(bird) < this.neighborhood){
+                    v.x += bird.vel.x;
+                    v.y += bird.vel.y;
+                    neighbCount++;
+                    // console.log("mais um");
+                }
+            }
+        })
+
+        if(neighbCount == 0){
+            return;
+        }
+
+        v.x /= neighbCount;
+        v.y /= neighbCount;
+        // v.normalize();
+        // return v;
+
+        // v.limit(this.max_force);
+        this.applyForce(v.mul(1));
+    }
+
+    // Method to make birds steer towards the center of mass
+    cohere(){
+        var v = new Vector(0, 0);
+        var neighbCount = 0;
+
+        Bird.birds.forEach(bird => {
+            if(bird.id != this.id){
+                if(this.distanceTo(bird) < this.neighborhood){
+                    v.x += bird.pos.x;
+                    v.y += bird.pos.y;
+                    neighbCount++;
+                }
+            }
+        })
+
+        if(neighbCount == 0){
+            return;
+        }
+
+        v.x /= neighbCount;
+        v.y /= neighbCount;
+        v.set(v.x - this.pos.x, v.y - this.pos.y);
+        // v.normalize();
+        // return v;
+        v.limit(this.max_force);
+        this.applyForce(v.mul(1));
+    }
+
+    // Method to make it keep a certain distance from the neighbors
+    separate(){
+        var v = new Vector(0, 0);
+        var neighbCount = 0;
+
+        Bird.birds.forEach(bird => {
+            if(bird.id != this.id){
+                if(this.distanceTo(bird) < this.neighborhood){
+                    v.x += bird.pos.x - this.pos.x;
+                    v.y += bird.pos.y - this.pos.y;
+                    neighbCount++;
+                }
+            }
+        })
+
+        if(neighbCount == 0){
+            return;
+        }
+
+        v.x /= neighbCount;
+        v.y /= neighbCount;
+
+        v.mul(-1);
+        v.set(v.x - this.pos.x, v.y - this.pos.y);
+        // v.normalize();
+        // return v;
+        v.limit(this.max_force);
+        this.applyForce(v.mul(1));
+    }
+
+    display(){
         c.beginPath();
         // desenhaOval(c, this.posicao.x, this.posicao.y, this.radius*2, this.radius, 'red');
         c.ellipse(this.pos.x, this.pos.y, this.radius * 0.7, this.radius * 1.1, this.vel.headingRads() - Math.PI/2, 0, Math.PI * 2);
         // console.log(this.vel.headingDegs());
         c.fillStyle = this.color;
         c.strokeStyle = this.color;
-        c.fill();
-       
+        c.fill();   
     }
 }

@@ -4,7 +4,7 @@ const c = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-createBirds(400);
+createBirds(500);
 animate();
 
 
@@ -32,8 +32,11 @@ function animate(){
     requestAnimationFrame(animate);
 
     Bird.birds.forEach(bird => {
-        bird.update();
         bird.wander();
+        bird.align();
+        bird.cohere();
+        bird.separate();
+        bird.update();
     })
 }
 
